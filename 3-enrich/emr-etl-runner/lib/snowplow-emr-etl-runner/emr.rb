@@ -36,6 +36,7 @@ module Snowplow
       private
 
       def get_emr_jobflow_id_impl(client, name)
+        # Marker is used for paginating through all results
         marker = nil
         emr_cluster_id = nil
 
@@ -43,21 +44,17 @@ module Snowplow
           response = list_clusters(client, marker)
           emr_clusters = response.clusters.select { |c| c[:name] == name }
 
-          if emr_clusters.size == 0
+          case emr_clusters.size
+          when 0
             marker = response.marker
-          else
-            if emr_clusters.size > 1
-              raise EmrDiscoveryError, "EMR Cluster name must be unique for safe discovery - found #{emr_clusters.size} with name #{name}"
-            else
-              emr_cluster = emr_clusters.first
-
-              # Cluster be in WAITING for new job steps to be submitted...
-              if emr_cluster[:status][:state] == "RUNNING"
-                raise EmrDiscoveryError, "EMR Cluster must be in WAITING state before new job steps can be submitted - found #{emr_cluster[:status][:state]}"
-              end
-
-              emr_cluster_id = emr_cluster[:id]
+          when 1
+            emr_cluster = emr_clusters.first
+            if emr_cluster[:status][:state] == "RUNNING"
+              raise EmrDiscoveryError, "EMR Cluster must be in WAITING state before new job steps can be submitted - found #{emr_cluster[:status][:state]}"
             end
+            emr_cluster_id = emr_cluster[:id]
+          else
+            raise EmrDiscoveryError, "EMR Cluster name must be unique for safe discovery - found #{emr_clusters.size} with name #{name}"
           end
 
           break if marker.nil? or !emr_cluster_id.nil?
