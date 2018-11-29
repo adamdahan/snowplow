@@ -37,29 +37,27 @@ module Snowplow
       def get_emr_jobflow_id_impl(client, name)
         # Marker is used for paginating through all results
         marker = nil
-        emr_cluster_id = nil
+        emr_clusters = []
 
         loop do
           response = list_clusters(client, marker)
-          emr_clusters = response['Clusters'].select { |c| c['Name'] == name }
-
-          case emr_clusters.size
-          when 0
-            marker = response['Marker'] if response.has_key?('Marker')
-          when 1
-            emr_cluster = emr_clusters.first
-            if emr_cluster['Status']['State'] == "RUNNING"
-              raise EmrDiscoveryError, "EMR Cluster must be in WAITING state before new job steps can be submitted - found #{emr_cluster['Status']['State']}"
-            end
-            emr_cluster_id = emr_cluster['Id']
-          else
-            raise EmrDiscoveryError, "EMR Cluster name must be unique for safe discovery - found #{emr_clusters.size} with name #{name}"
-          end
-
-          break if marker.nil? or !emr_cluster_id.nil?
+          emr_clusters = emr_clusters + response['Clusters'].select { |c| c['Name'] == name }
+          marker = response['Marker'] if response.has_key?('Marker')
+          break if marker.nil?
         end
 
-        emr_cluster_id
+        case emr_clusters.size
+        when 0
+          return nil
+        when 1
+          emr_cluster = emr_clusters.first
+          if emr_cluster['Status']['State'] == "RUNNING"
+            raise EmrDiscoveryError, "EMR Cluster must be in WAITING state before new job steps can be submitted - found #{emr_cluster['Status']['State']}"
+          end
+          return emr_cluster['Id']
+        else
+          raise EmrDiscoveryError, "EMR Cluster name must be unique for safe discovery - found #{emr_clusters.size} with name #{name}"
+        end
       end
 
       def list_clusters(client, marker)
