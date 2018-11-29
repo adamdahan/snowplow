@@ -13,9 +13,6 @@ GEM
       aws-partitions (~> 1.0)
       aws-sigv4 (~> 1.0)
       jmespath (~> 1.0)
-    aws-sdk-emr (1.1.0)
-      aws-sdk-core (~> 3)
-      aws-sigv4 (~> 1.0)
     aws-sdk-kms (1.5.0)
       aws-sdk-core (~> 3)
       aws-sigv4 (~> 1.0)
@@ -126,7 +123,6 @@ PLATFORMS
 DEPENDENCIES
   avro (~> 1.8.1)
   awrence (~> 0.1.0)
-  aws-sdk-emr (~> 1.1.0)
   aws-sdk-s3 (~> 1)
   contracts (~> 0.9, <= 0.11)
   coveralls

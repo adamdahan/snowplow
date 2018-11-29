@@ -16,7 +16,6 @@
 require 'set'
 require 'elasticity'
 require 'aws-sdk-s3'
-require 'aws-sdk-emr'
 require 'awrence'
 require 'json'
 require 'base64'
@@ -91,11 +90,6 @@ module Snowplow
           :secret_access_key => config[:aws][:secret_access_key],
           :region => config[:aws][:s3][:region])
 
-        emr = Aws::EMR::Client.new(
-          :access_key_id => config[:aws][:access_key_id],
-          :secret_access_key => config[:aws][:secret_access_key],
-          :region => config[:aws][:emr][:region])
-
         ami_version = Gem::Version.new(config[:aws][:emr][:ami_version])
 
         # Configure Elasticity with your AWS credentials
@@ -107,6 +101,7 @@ module Snowplow
         # Create a job flow
         found_persistent_jobflow = false
         if use_persistent_jobflow
+          emr = Elasticity::EMR.new(:region => config[:aws][:emr][:region])
           emr_jobflow_id = get_emr_jobflow_id(emr, config[:aws][:emr][:jobflow][:job_name])
 
           if emr_jobflow_id.nil?

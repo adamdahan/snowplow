@@ -13,7 +13,6 @@
 # Copyright:: Copyright (c) 2012-2018 Snowplow Analytics Ltd
 # License::   Apache License Version 2.0
 
-require 'aws-sdk-emr'
 require 'contracts'
 require 'pathname'
 require 'uri'
@@ -42,17 +41,17 @@ module Snowplow
 
         loop do
           response = list_clusters(client, marker)
-          emr_clusters = response.clusters.select { |c| c[:name] == name }
+          emr_clusters = response['Clusters'].select { |c| c['Name'] == name }
 
           case emr_clusters.size
           when 0
-            marker = response.marker
+            marker = response['Marker'] if response.has_key?('Marker')
           when 1
             emr_cluster = emr_clusters.first
-            if emr_cluster[:status][:state] == "RUNNING"
-              raise EmrDiscoveryError, "EMR Cluster must be in WAITING state before new job steps can be submitted - found #{emr_cluster[:status][:state]}"
+            if emr_cluster['Status']['State'] == "RUNNING"
+              raise EmrDiscoveryError, "EMR Cluster must be in WAITING state before new job steps can be submitted - found #{emr_cluster['Status']['State']}"
             end
-            emr_cluster_id = emr_cluster[:id]
+            emr_cluster_id = emr_cluster['Id']
           else
             raise EmrDiscoveryError, "EMR Cluster name must be unique for safe discovery - found #{emr_clusters.size} with name #{name}"
           end
@@ -65,7 +64,7 @@ module Snowplow
 
       def list_clusters(client, marker)
         options = {
-            cluster_states: ["WAITING", "RUNNING"],
+            states: ["WAITING", "RUNNING"],
         }
         options[:marker] = marker unless marker.nil?
         client.list_clusters(options)
