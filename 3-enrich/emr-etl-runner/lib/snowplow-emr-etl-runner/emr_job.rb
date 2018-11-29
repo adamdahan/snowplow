@@ -77,13 +77,12 @@ module Snowplow
           config[:storage][:versions][:rdb_loader])
 
         collector_format = config.dig(:collectors, :format)
-        run_tstamp = Time.new
-        @run_tstamp = run_tstamp
-        run_id = run_tstamp.strftime("%Y-%m-%d-%H-%M-%S")
+        @run_tstamp = Time.new
+        run_id = @run_tstamp.strftime("%Y-%m-%d-%H-%M-%S")
         @run_id = run_id
         @rdb_loader_log_base = config[:aws][:s3][:buckets][:log] + "rdb-loader/#{@run_id}/"
         @rdb_loader_logs = []   # pairs of target name and associated log
-        etl_tstamp = (run_tstamp.to_f * 1000).to_i.to_s
+        etl_tstamp = (@run_tstamp.to_f * 1000).to_i.to_s
         output_codec = output_codec_from_compression_format(config.dig(:enrich, :output_compression))
         encrypted = config[:aws][:s3][:buckets][:encrypted]
 
